@@ -94,6 +94,8 @@ def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
     y_data = data_norm[['Species_No']]
     # Create grid
     grid = create_grid(grid_delta)
+    # Stop criteria
+    stop = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
     # Calculate mountain values
     centroides = []
     grids = []
@@ -108,6 +110,12 @@ def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
         max_mnt_val_idx = grid.stack().idxmax()
         centroides.append([max_mnt_val_idx[1],max_mnt_val_idx[0]])
         grids.append(grid)
+        if len(centroides) >= 4:
+            aux = centroides[-4:]
+            aux.sort()
+            if aux == stop:
+                centroides = centroides[:-4]
+                break
     df_result = calculate_membership(X_data, centroides)
     plot_2D_data_result(X_data,df_result,data_norm)
     return grids,centroides
