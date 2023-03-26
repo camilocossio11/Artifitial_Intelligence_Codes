@@ -39,8 +39,15 @@ def mnt_inicial(data: list, x: float, y: float, sigma: float) -> float:
         mnt_value += math.exp(-(normas.norma_euclidea([x,y],d))/(2*sigma**2))
     return mnt_value
 
-def mnt(grid: pd.DataFrame, data: list, x: float, y: float, sigma: float, centroide: list, beta: float):
+def mnt(grid: pd.DataFrame, data: list, x: float, y: float, sigma: float, centroide: list, beta: float, a = False):
     mnt_value = grid[x][y] - mnt_inicial(data,centroide[0],centroide[1],sigma) * math.exp(-(normas.norma_euclidea([x,y],centroide))/(2*beta**2))
+    #mnt_value = grid[x][y] - grid[centroide[0]][centroide[1]] * math.exp(-(normas.norma_euclidea([x,y],centroide))**2/(2*beta**2))
+    if a == True and x == centroide[0] and y == centroide[1]:
+
+        print('grid: ',grid[x][y])
+        print('mnt: ',mnt_inicial(data,centroide[0],centroide[1],sigma))
+        print('exp: ',math.exp(-(normas.norma_euclidea([x,y],centroide))/(2*beta**2)))
+        print('mnt_value: ',mnt_value)
     return mnt_value
 
 def calc_mnt_grid(
@@ -58,7 +65,8 @@ def calc_mnt_grid(
                 mnt_value = mnt_inicial(data,x,y,sigma)
                 grid[x][y] = mnt_value
             else:
-                mnt_value = mnt(grid,data,x,y,sigma,centroides[-1],beta)
+                a = True
+                mnt_value = mnt(grid,data,x,y,sigma,centroides[-1],beta,a)
                 grid[x][y] = mnt_value
     return grid
 
@@ -100,15 +108,10 @@ def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
     centroides = []
     grids = []
     for i in range(n_iterations):
-        grid = calc_mnt_grid(
-                grid, 
-                X_data, 
-                sigma, 
-                centroides, 
-                beta, 
-                i)
+        grid = calc_mnt_grid(grid, X_data, sigma, centroides, beta, i)
         max_mnt_val_idx = grid.stack().idxmax()
         centroides.append([max_mnt_val_idx[1],max_mnt_val_idx[0]])
+        print(centroides)
         grids.append(grid)
         if len(centroides) >= 4:
             aux = centroides[-4:]
@@ -120,5 +123,12 @@ def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
     plot_2D_data_result(X_data,df_result,data_norm)
     return grids,centroides
 
-
+# %%
+if __name__ == '__main__':
+    features_to_use = ['Petal_width','Petal_length',]
+    n_iterations = 10
+    sigma = 0.5
+    beta = 1.5 * sigma
+    delta_grid = 0.1
+    grids,centroides = execute(n_iterations,sigma,beta,delta_grid,features_to_use)
 # %%
