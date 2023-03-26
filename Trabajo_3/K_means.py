@@ -27,8 +27,6 @@ def kmeans(X, k, max_iter=100):
         if len(costs) >= 2 and costs[-2] == costs[-1]:
             break
         else:
-            # Asignar cada punto al grupo más cercano
-            # distances = np.sqrt(((X - centroids[:, np.newaxis])**2).sum(axis=2))
             distances = []
             for ctr in range(k):
                 dist = []
