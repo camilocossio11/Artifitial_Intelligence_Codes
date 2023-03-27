@@ -2,36 +2,14 @@
 import pandas as pd
 import numpy as np
 import math
-import matplotlib.pyplot as plt
 import normas
-import seaborn
+import common_functions as commons
 
 #%% Functions
-def minmax_norm(df: pd.DataFrame) -> pd.DataFrame:
-    return (df - df.min()) / ( df.max() - df.min())
 
 def create_grid(delta: float):
     labels = [round(x,2) for x in np.arange(0,1.1,delta)]
     return pd.DataFrame(0,index = labels,columns=labels)
-
-def plot_2D_data_result(X_data: pd.DataFrame, df_result: pd.DataFrame, data_to_use: pd.DataFrame):
-    fig, axes = plt.subplots(1, 3, figsize=(15, 5), sharey=True)
-    fig.suptitle('Results')
-    cols = X_data.columns.tolist()
-    seaborn.scatterplot(ax=axes[0],
-                        x=cols[0],
-                        y=cols[1],
-                        data=X_data).set(title='Dataset preview')
-    seaborn.scatterplot(ax=axes[1],
-                        x=cols[0],
-                        y=cols[1],
-                        hue='Label',
-                        data=df_result).set(title='Result')
-    seaborn.scatterplot(ax=axes[2],
-                        x=cols[0],
-                        y=cols[1],
-                        hue='Species_No',
-                        data=data_to_use).set(title='Original')
 
 def mnt_inicial(data: list, x: float, y: float, sigma: float) -> float:
     mnt_value = 0
@@ -87,19 +65,9 @@ def calculate_membership(X, centroides):
     return X
 
 
-def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
+def execute(n_iterations,sigma,beta,grid_delta,file,vars_to_use,target,numpy_or_pandas):
     # Import dataset
-    data_raw = pd.read_excel('Iris.xlsx')[['Species_No',
-                                            'Petal_width',
-                                            'Petal_length',
-                                            'Sepal_width',
-                                            'Sepal_length']]
-    data_to_use = data_raw[['Species_No'] + vars_to_use]
-    # Normalize data
-    data_norm = minmax_norm(data_to_use)
-    # Get X and Y data
-    X_data = data_norm[vars_to_use]
-    y_data = data_norm[['Species_No']]
+    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
     # Create grid
     grid = create_grid(grid_delta)
     # Stop criteria
@@ -120,7 +88,7 @@ def execute(n_iterations,sigma,beta,grid_delta,vars_to_use):
                 centroides = centroides[:-4]
                 break
     df_result = calculate_membership(X_data, centroides)
-    plot_2D_data_result(X_data,df_result,data_norm)
+    commons.plot_2D_data_result(X_data,df_result,data_norm)
     return grids,centroides
 
 # %%
@@ -129,6 +97,10 @@ if __name__ == '__main__':
     n_iterations = 10
     sigma = 0.5
     beta = 1.5 * sigma
-    delta_grid = 0.1
-    grids,centroides = execute(n_iterations,sigma,beta,delta_grid,features_to_use)
+    grid_delta = 0.1
+    vars_to_use = ['Petal_width','Petal_length']
+    target = ['Species_No']
+    file = 'Iris.xlsx'
+    numpy_or_pandas = 'pandas'
+    grids,centroides = execute(n_iterations,sigma,beta,grid_delta,file,vars_to_use,target,numpy_or_pandas)
 # %%

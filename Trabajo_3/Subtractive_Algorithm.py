@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import normas
 import seaborn
 import Mountain_Clustering as MC
+import common_functions as commons
 
 #%% Functions
 def density_initial(x1: pd.DataFrame, x2: pd.DataFrame, ra: float) -> list:
@@ -47,18 +48,9 @@ def calc_mnt_grid(
         X_data['Value'] = values
     return X_data
 
-def execute(n_iterations,ra,rb,grid_delta,vars_to_use):
+def execute(n_iterations,ra,rb,grid_delta,file,vars_to_use,target,numpy_or_pandas):
     # Import dataset
-    data_raw = pd.read_excel('Iris.xlsx')[['Species_No',
-                                            'Petal_width',
-                                            'Petal_length',
-                                            'Sepal_width',
-                                            'Sepal_length']]
-    data_to_use = data_raw[['Species_No'] + vars_to_use]
-    # Normalize data
-    data_norm = MC.minmax_norm(data_to_use)
-    # Get X and Y data
-    X_data = data_norm[vars_to_use]
+    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
     # Stop criteria
     stop = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
     # Calculate mountain values
@@ -89,12 +81,15 @@ def execute(n_iterations,ra,rb,grid_delta,vars_to_use):
     return results,centroides
 
 if __name__ == '__main__':
-    features_to_use = ['Petal_width','Petal_length',]
+    vars_to_use = ['Petal_width','Petal_length']
+    target = ['Species_No']
+    file = 'Iris.xlsx'
+    numpy_or_pandas = 'pandas'
     n_iterations = 3
     ra = 0.5
     rb = 1.5 * ra
-    delta_grid = 0.1
-    results,centroides = execute(n_iterations,ra,rb,delta_grid,features_to_use)
+    grid_delta = 0.1
+    results,centroides = execute(n_iterations,ra,rb,grid_delta,file,vars_to_use,target,numpy_or_pandas)
 
 
 # %%

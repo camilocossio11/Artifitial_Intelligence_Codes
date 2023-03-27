@@ -1,19 +1,11 @@
 #%%
 import numpy as np
 import matplotlib.pyplot as plt
-import Mountain_Clustering as MC
+import common_functions as commons
 import pandas as pd
 import normas
 
 #%% Functions
-def load_data(file: str, vars_to_use: list, target: list, numpy_or_pandas: str):
-    data_to_use = pd.read_excel(file)[target + vars_to_use]
-    data_norm = MC.minmax_norm(data_to_use)
-    if numpy_or_pandas == 'numpy':
-        X_data = data_norm[vars_to_use].to_numpy()
-    else:
-        X_data = data_norm[vars_to_use]
-    return X_data,data_norm
 
 def find_den(dist_matrix,n_samples,k,m):
     denominators = np.zeros(n_samples)
@@ -60,7 +52,7 @@ def get_new_U(dist_matrix,n_samples,k,m):
     return new_U
 
 def execute(file,vars_to_use,target,numpy_or_pandas,k,m,max_iter = 1000):
-    X_data,data_norm = load_data(file,vars_to_use,target,numpy_or_pandas)
+    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
     n_samples = X_data.shape[0]
     n_features = X_data.shape[1]
     # Initialice U matrix
@@ -83,7 +75,7 @@ def execute(file,vars_to_use,target,numpy_or_pandas,k,m,max_iter = 1000):
     X_data = pd.DataFrame(X_data,columns=vars_to_use)
     X_data['Label'] = labels
     if (len(vars_to_use) == 2):
-        MC.plot_2D_data_result(X_data,X_data,data_norm)
+        commons.plot_2D_data_result(X_data,X_data,data_norm)
     return costs,centroids,U,X_data
 
 #%%

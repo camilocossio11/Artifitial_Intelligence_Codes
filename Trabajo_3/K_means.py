@@ -3,10 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import normas
-import Mountain_Clustering as MC
-import seaborn
+import common_functions as commons
 from mpl_toolkits.mplot3d import Axes3D
-from matplotlib.colors import ListedColormap
 
 def cost_function(X_data,centroides,labels):
     cost = 0
@@ -24,7 +22,7 @@ def kmeans(X, k, max_iter=100):
     centroids = X[np.random.choice(X.shape[0], k, replace=False), :]
     costs = []
     for i in range(max_iter):
-        if len(costs) >= 2 and costs[-2] == costs[-1]:
+        if len(costs) >= 2 and costs[-2] - costs[-1] < 0.0001:
             break
         else:
             distances = []
@@ -43,22 +41,13 @@ def kmeans(X, k, max_iter=100):
             print('Cost:',cost)
     return labels, centroids
 
-def execute(vars_to_use,k):
-    data_raw = pd.read_excel('Iris.xlsx')[['Species_No',
-                                            'Petal_width',
-                                            'Petal_length',
-                                            'Sepal_width',
-                                            'Sepal_length']]
-    data_to_use = data_raw[['Species_No'] + vars_to_use]
-    # Normalize data
-    data_norm = MC.minmax_norm(data_to_use)
-    # Get X and Y data
-    X_data = data_norm[vars_to_use].to_numpy()
+def execute(file,vars_to_use,target,numpy_or_pandas,k):
+    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
     labels, centroids = kmeans(X_data, k)
     X_data = pd.DataFrame(X_data,columns=vars_to_use)
     X_data['Label'] = labels
     if (len(vars_to_use) == 2):
-        MC.plot_2D_data_result(X_data,X_data,data_norm)
+        commons.plot_2D_data_result(X_data,X_data,data_norm)
     return labels, centroids, X_data
 
 def plot_3d(X_data,k,vars_to_use):
@@ -81,8 +70,11 @@ def plot_3d(X_data,k,vars_to_use):
     plt.title('Result')
 
 # %%
-vars_to_use = ['Petal_width','Petal_length','Sepal_width']
+vars_to_use = ['Petal_width','Petal_length','Sepal_length']
+target = ['Species_No']
+file = 'Iris.xlsx'
+numpy_or_pandas = 'numpy'
 k = 3
-labels, centroids, X_data = execute(vars_to_use,k)
+labels, centroids, X_data = execute(file,vars_to_use,target,numpy_or_pandas,k)
 plot_3d(X_data,k,vars_to_use)
 # %%
