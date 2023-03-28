@@ -79,12 +79,14 @@ def execute(file,vars_to_use,target,numpy_or_pandas,k,m,max_iter = 1000):
     return costs,centroids,U,X_data
 
 #%%
-# Params 
-vars_to_use = ['Petal_width','Petal_length']
-target = ['Species_No']
-file = 'Iris.xlsx'
-numpy_or_pandas = 'numpy'
-k = 3
-m = 2
-costs,centroids,U,X_data = execute(file,vars_to_use,target,numpy_or_pandas,k,m)
+if __name__ == '__main__':
+    vars_to_use = ['Petal_width','Petal_length']
+    target = ['Species_No']
+    file = 'Iris.xlsx'
+    numpy_or_pandas = 'numpy'
+    k = 3
+    m = 2
+    costs,centroids,U,X_data = execute(file,vars_to_use,target,numpy_or_pandas,k,m)
+    silhouette_avg = commons.silhouette(X_data[vars_to_use],X_data[['Label']])
+    print("El índice de silueta es: ", silhouette_avg)
 # %%

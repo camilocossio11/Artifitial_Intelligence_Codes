@@ -70,11 +70,14 @@ def plot_3d(X_data,k,vars_to_use):
     plt.title('Result')
 
 # %%
-vars_to_use = ['Petal_width','Petal_length','Sepal_length']
-target = ['Species_No']
-file = 'Iris.xlsx'
-numpy_or_pandas = 'numpy'
-k = 3
-labels, centroids, X_data = execute(file,vars_to_use,target,numpy_or_pandas,k)
-plot_3d(X_data,k,vars_to_use)
+if __name__ == '__main__':
+    vars_to_use = ['Petal_width','Petal_length','Sepal_length']
+    target = ['Species_No']
+    file = 'Iris.xlsx'
+    numpy_or_pandas = 'numpy'
+    k = 3
+    labels, centroids, X_data = execute(file,vars_to_use,target,numpy_or_pandas,k)
+    plot_3d(X_data,k,vars_to_use)
+    silhouette_avg = commons.silhouette(X_data[vars_to_use],X_data[['Label']])
+    print("El índice de silueta es: ", silhouette_avg)
 # %%

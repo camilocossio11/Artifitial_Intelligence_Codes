@@ -52,4 +52,6 @@ if __name__ == '__main__':
     eps = 0.35
     min_pts = 15
     X_data,centroids = execute(file,vars_to_use,target,numpy_or_pandas,eps,min_pts)
+    silhouette_avg = commons.silhouette(X_data[vars_to_use],X_data[['Label']])
+    print("El índice de silueta es: ", silhouette_avg)
 # %%
