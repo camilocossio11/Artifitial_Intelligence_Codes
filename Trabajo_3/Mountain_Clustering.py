@@ -4,103 +4,86 @@ import numpy as np
 import math
 import normas
 import common_functions as commons
+from itertools import product
 
 #%% Functions
 
-def create_grid(delta: float):
-    labels = [round(x,2) for x in np.arange(0,1.1,delta)]
-    return pd.DataFrame(0,index = labels,columns=labels)
+def create_grid(delta: float,n_features: int):
+    v = [round(x,2) for x in np.arange(0,1.1,delta)]
+    coords = [[list(comb)] for comb in product(*([v]*n_features))]
+    grid = pd.DataFrame(coords,columns=['coord'])
+    return grid
 
-def mnt_inicial(data: list, x: float, y: float, sigma: float) -> float:
-    mnt_value = 0
-    for d in data:
-        mnt_value += math.exp(-(normas.norma_euclidea([x,y],d))/(2*sigma**2))
-    return mnt_value
+def mnt_inicial(X_data: pd.DataFrame, grid:pd.DataFrame, sigma: float) -> float:
+    values = []
+    for i in range(len(grid)):
+        val = 0
+        for j in range(len(X_data)):
+            v1 = grid['coord'][i]
+            v2 = X_data.loc[j].tolist()
+            val += math.exp(-(normas.norma_euclidea(v1,v2)**2)/(2*sigma**2))
+        values.append(val)
+    return values
 
-def mnt(grid: pd.DataFrame, data: list, x: float, y: float, sigma: float, centroide: list, beta: float, a = False):
-    mnt_value = grid[x][y] - mnt_inicial(data,centroide[0],centroide[1],sigma) * math.exp(-(normas.norma_euclidea([x,y],centroide))/(2*beta**2))
-    #mnt_value = grid[x][y] - grid[centroide[0]][centroide[1]] * math.exp(-(normas.norma_euclidea([x,y],centroide))**2/(2*beta**2))
-    if a == True and x == centroide[0] and y == centroide[1]:
-
-        print('grid: ',grid[x][y])
-        print('mnt: ',mnt_inicial(data,centroide[0],centroide[1],sigma))
-        print('exp: ',math.exp(-(normas.norma_euclidea([x,y],centroide))/(2*beta**2)))
-        print('mnt_value: ',mnt_value)
-    return mnt_value
+def mnt(X_data: pd.DataFrame, grid: pd.DataFrame, centroide: list, highest_val: float, beta: float):
+    values = []
+    for i in range(len(grid)):
+        v1 = grid['coord'][i]
+        v2 = centroide
+        val = grid['Value'][i] - highest_val * math.exp(-((normas.norma_euclidea(v1,v2)**2)/(2*beta**2)))
+        values.append(val)
+    return values
 
 def calc_mnt_grid(
         grid: pd.DataFrame, 
-        X: pd.DataFrame, 
+        X_data: pd.DataFrame, 
         sigma: float, 
-        centroides: list, 
+        centroide: list, 
+        highest_val: float,
         beta: float, 
         iter: int) -> pd.DataFrame:
-    cols = X.columns.tolist()
-    data = [[X[cols[0]][i], X[cols[1]][i]] for i in range(len(X))]
-    for x in grid.columns.tolist():
-        for y in grid.index.tolist():
-            if iter == 0:
-                mnt_value = mnt_inicial(data,x,y,sigma)
-                grid[x][y] = mnt_value
-            else:
-                a = True
-                mnt_value = mnt(grid,data,x,y,sigma,centroides[-1],beta,a)
-                grid[x][y] = mnt_value
+    if iter == 0:
+        values = mnt_inicial(X_data,grid,sigma)
+        grid['Value'] = values
+    else:
+        values = mnt(X_data,grid,centroide,highest_val,beta)
+        grid['Value'] = values
     return grid
 
-def calculate_membership(X, centroides):
-    cols = X.columns.tolist()
-    data = [[X[cols[0]][i], X[cols[1]][i]] for i in range(len(X))]
-    label = []
-    for d in data:
-        cluster = ''
-        dist = 1000
-        for i in range(len(centroides)):
-            dist_cent = normas.norma_euclidea(d,centroides[i])
-            if dist_cent <= dist:
-                dist = dist_cent
-                cluster = f'Cluster {i+1}'
-        label.append(cluster)
-    X['Label'] = label
-    return X
-
-
-def execute(n_iterations,sigma,beta,grid_delta,file,vars_to_use,target,numpy_or_pandas):
+def execute(n_iterations,sigma,beta,delta,file,vars_to_use,numpy_or_pandas):
     # Import dataset
-    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
+    X_data = commons.load_data(file,vars_to_use,numpy_or_pandas)
+    # Get dimensions
+    n_samples = X_data.shape[0]
+    n_features = X_data.shape[1]
     # Create grid
-    grid = create_grid(grid_delta)
-    # Stop criteria
-    stop = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
+    grid = create_grid(delta,n_features)
     # Calculate mountain values
     centroides = []
     grids = []
     for i in range(n_iterations):
-        grid = calc_mnt_grid(grid, X_data, sigma, centroides, beta, i)
-        max_mnt_val_idx = grid.stack().idxmax()
-        centroides.append([max_mnt_val_idx[1],max_mnt_val_idx[0]])
-        print(centroides)
-        grids.append(grid)
-        if len(centroides) >= 4:
-            aux = centroides[-4:]
-            aux.sort()
-            if aux == stop:
-                centroides = centroides[:-4]
+        if i == 0:
+            grid = calc_mnt_grid(grid, X_data, sigma, [], 0, beta, i)
+            grids.append(grid)
+        else:
+            centroid_idx = grid[['Value']].idxmax()[0]
+            highest_val = grid['Value'][centroid_idx]
+            centroides.append(grid['coord'][centroid_idx])
+            grid = calc_mnt_grid(grid, X_data, sigma, centroides[-1], highest_val, beta, i)
+            if len(centroides) >= 2 and centroides[-2] == centroides[-1]:
                 break
-    df_result = calculate_membership(X_data, centroides)
-    commons.plot_2D_data_result(X_data,df_result,data_norm)
+    df_result = commons.calculate_membership(X_data, centroides)
+    if n_features == 2:
+        commons.plot_2D_data_result(X_data,df_result)
     return grids,centroides
 
 # %%
 if __name__ == '__main__':
-    features_to_use = ['Petal_width','Petal_length',]
+    file,vars_to_use = commons.get_dataset('Iris')
+    numpy_or_pandas = 'pandas'
     n_iterations = 10
-    sigma = 0.5
+    sigma = 0.6
     beta = 1.5 * sigma
     grid_delta = 0.1
-    vars_to_use = ['Petal_width','Petal_length']
-    target = ['Species_No']
-    file = 'Iris.xlsx'
-    numpy_or_pandas = 'pandas'
-    grids,centroides = execute(n_iterations,sigma,beta,grid_delta,file,vars_to_use,target,numpy_or_pandas)
+    grids,centroides = execute(n_iterations,sigma,beta,grid_delta,file,vars_to_use,numpy_or_pandas)
 # %%

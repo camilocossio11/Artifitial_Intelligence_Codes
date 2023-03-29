@@ -51,8 +51,8 @@ def get_new_U(dist_matrix,n_samples,k,m):
             new_U[i,j] = 1/(dist_matrix[i,j]**(2/(m-1))*denominators[i])
     return new_U
 
-def execute(file,vars_to_use,target,numpy_or_pandas,k,m,max_iter = 1000):
-    X_data,data_norm = commons.load_data(file,vars_to_use,target,numpy_or_pandas)
+def execute(file,vars_to_use,numpy_or_pandas,k,m,max_iter = 1000):
+    X_data = commons.load_data(file,vars_to_use,numpy_or_pandas)
     n_samples = X_data.shape[0]
     n_features = X_data.shape[1]
     # Initialice U matrix
@@ -75,18 +75,17 @@ def execute(file,vars_to_use,target,numpy_or_pandas,k,m,max_iter = 1000):
     X_data = pd.DataFrame(X_data,columns=vars_to_use)
     X_data['Label'] = labels
     if (len(vars_to_use) == 2):
-        commons.plot_2D_data_result(X_data,X_data,data_norm)
+        commons.plot_2D_data_result(X_data,X_data)
     return costs,centroids,U,X_data
 
 #%%
 if __name__ == '__main__':
-    vars_to_use = ['Petal_width','Petal_length']
-    target = ['Species_No']
-    file = 'Iris.xlsx'
+    name = 'Expanded'
+    file,vars_to_use = commons.get_dataset(name)
     numpy_or_pandas = 'numpy'
-    k = 3
+    k = 2
     m = 2
-    costs,centroids,U,X_data = execute(file,vars_to_use,target,numpy_or_pandas,k,m)
+    costs,centroids,U,X_data = execute(file,vars_to_use,numpy_or_pandas,k,m)
     silhouette_avg = commons.silhouette(X_data[vars_to_use],X_data[['Label']])
     print("El índice de silueta es: ", silhouette_avg)
 # %%
